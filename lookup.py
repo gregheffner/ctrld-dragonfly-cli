@@ -4,13 +4,15 @@ AUTHORIZATION = ""
 
 
 import sys
+
 import pandas as pd
 import requests
+from tabulate import tabulate
+from termcolor import colored
 
 
-def lookup_domain(domain):
-
-    API_URL = "https://api.sentinel.controld.com/api/v1/domains/{}"
+def print_section(title, color):
+    print(colored(f"\n{title}", color, attrs=["bold"]))
 
 
 def lookup_domain(domain):
@@ -24,28 +26,35 @@ def lookup_domain(domain):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
     }
     response = requests.get(url, headers=headers)
-    print(f"Status: {response.status_code}")
     if response.status_code != 200:
+        print(colored(f"Error: {response.status_code}", "red"))
         print(response.text)
         return
     data = response.json()
-    # Extract categories
+    # Domain Categories
     try:
         categories = data["body"]["features"]["classification"]["categories"]
         df = pd.DataFrame(categories)
         df = df[["name", "confidence", "confidenceLabel", "reasoning"]]
-        print("\nDomain Categories:")
-        print(df.to_markdown(index=False))
+        print_section("Domain Categories:", "cyan")
+        print(
+            tabulate(
+                df,
+                headers="keys",
+                tablefmt="fancy_grid",
+                showindex=False,
+                stralign="left",
+            )
+        )
     except Exception as e:
-        print("Could not parse categories:", e)
-    # Optionally, print DNS records
+        print(colored(f"Could not parse categories: {e}", "red"))
+    # DNS Records
     try:
         dns = data["body"]["features"]["dns"]["records"]
         dns_rows = []
         for record_type, records in dns.items():
             if isinstance(records, list):
                 for rec in records:
-                    # Some records may be dicts with 'value' and 'ttl', others just strings
                     if isinstance(rec, dict):
                         address = rec.get("value", "")
                         ttl = rec.get("ttl", "")
@@ -61,12 +70,20 @@ def lookup_domain(domain):
                 dns_rows.append({"Type": record_type, "Address": address, "TTL": ttl})
         if dns_rows:
             dns_df = pd.DataFrame(dns_rows)
-            print("\nDNS Records:")
-            print(dns_df.to_markdown(index=False))
+            print_section("DNS Records:", "green")
+            print(
+                tabulate(
+                    dns_df,
+                    headers="keys",
+                    tablefmt="fancy_grid",
+                    showindex=False,
+                    stralign="left",
+                )
+            )
         else:
-            print("No DNS records found.")
+            print(colored("No DNS records found.", "yellow"))
     except Exception as e:
-        print("Could not parse DNS records:", e)
+        print(colored(f"Could not parse DNS records: {e}", "red"))
     # GeoIP Snapshot
     try:
         geoip = data["body"]["features"].get("geoip", {}).get("ipLocations", {})
@@ -77,19 +94,25 @@ def lookup_domain(domain):
                     "IP": ip,
                     "ASN": info.get("asn", ""),
                     "ISP": info.get("organization", ""),
-                    # Location is not always available, so leave blank if missing
                     "Location": info.get("location", ""),
                 }
             )
         if geoip_rows:
             geoip_df = pd.DataFrame(geoip_rows)
-            print("\nGeoIP Snapshot:")
-            print(geoip_df.to_markdown(index=False))
+            print_section("GeoIP Snapshot:", "magenta")
+            print(
+                tabulate(
+                    geoip_df,
+                    headers="keys",
+                    tablefmt="fancy_grid",
+                    showindex=False,
+                    stralign="left",
+                )
+            )
         else:
-            print("No GeoIP data found.")
+            print(colored("No GeoIP data found.", "yellow"))
     except Exception as e:
-        print("Could not parse GeoIP data:", e)
-
+        print(colored(f"Could not parse GeoIP data: {e}", "red"))
     # TLS Results
     try:
         tls = data["body"]["features"].get("tls", {})
@@ -102,11 +125,18 @@ def lookup_domain(domain):
             }
         ]
         tls_df = pd.DataFrame(tls_rows)
-        print("\nTLS Results:")
-        print(tls_df.to_markdown(index=False))
+        print_section("TLS Results:", "yellow")
+        print(
+            tabulate(
+                tls_df,
+                headers="keys",
+                tablefmt="fancy_grid",
+                showindex=False,
+                stralign="left",
+            )
+        )
     except Exception as e:
-        print("Could not parse TLS data:", e)
-
+        print(colored(f"Could not parse TLS data: {e}", "red"))
     # WHOIS Data
     try:
         whois = data["body"]["features"].get("whois", {}).get("parsed", {})
@@ -119,10 +149,18 @@ def lookup_domain(domain):
             }
         ]
         whois_df = pd.DataFrame(whois_rows)
-        print("\nWHOIS Data:")
-        print(whois_df.to_markdown(index=False))
+        print_section("WHOIS Data:", "blue")
+        print(
+            tabulate(
+                whois_df,
+                headers="keys",
+                tablefmt="fancy_grid",
+                showindex=False,
+                stralign="left",
+            )
+        )
     except Exception as e:
-        print("Could not parse WHOIS data:", e)
+        print(colored(f"Could not parse WHOIS data: {e}", "red"))
 
 
 if __name__ == "__main__":
