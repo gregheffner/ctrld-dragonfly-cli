@@ -36,7 +36,7 @@ This is a Python CLI tool to query the [ControlD Dragonfly URL Filtering](https:
    ```
 3. **Run the script:**
    ```sh
-   python lookup_domain.py <domain>
+   python lookup.py <domain>
    ```
 
 ### CLI Options
@@ -59,17 +59,17 @@ If no section flags are provided, all sections are shown (except --json, which o
 
 Show all info (default):
 ```
-python lookup_domain.py example.com
+python lookup.py example.com
 ```
 
 Show only DNS and WHOIS:
 ```
-python lookup_domain.py example.com --dns --whois
+python lookup.py example.com --dns --whois
 ```
 
 Show raw JSON output:
 ```
-python lookup_domain.py example.com --json
+python lookup.py example.com --json
 ```
 
 ## Notes
