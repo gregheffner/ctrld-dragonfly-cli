@@ -1,17 +1,15 @@
 import argparse
 import json
 import sys
+import pandas as pd
+import requests
 
+from tabulate import tabulate
 from termcolor import colored
 
 
 def print_section(title, color):
     print(colored(f"\n{title}", color, attrs=["bold"]))
-
-
-import pandas as pd
-import requests
-from tabulate import tabulate
 
 
 def lookup_domain(
