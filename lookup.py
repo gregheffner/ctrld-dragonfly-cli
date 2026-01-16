@@ -1,12 +1,11 @@
 import argparse
 import json
 import sys
+
 import pandas as pd
 import requests
-
 from tabulate import tabulate
 from termcolor import colored
-
 
 def print_section(title, color):
     print(colored(f"\n{title}", color, attrs=["bold"]))
@@ -171,22 +170,7 @@ API_URL = "https://api.sentinel.controld.com/api/v1/domains/{}"
 
 def main():
     parser = argparse.ArgumentParser(
-        description="""
-controld-lookup: Query domain intelligence from ControlD Sentinel API.
-
-Usage:
-  python lookup_domain.py <domain> [options]
-
-Options:
-  --json           Output full JSON response only (no formatting)
-  --categories     Show only domain categories
-  --dns            Show only DNS records
-  --geoip          Show only GeoIP snapshot
-  --tls            Show only TLS results
-  --whois          Show only WHOIS data
-
-If no section flags are provided, all sections are shown (except --json, which overrides all).
-        """,
+        description="controld-lookup: Query domain intelligence from ControlD Sentinel API.\n\nIf no section flags are provided, all sections are shown (except --json, which overrides all).\n\nExample usage:\n  python lookup.py example.com --dns --whois\n  python lookup.py example.com --json",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("domain", help="Domain to look up")
