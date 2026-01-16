@@ -1,14 +1,7 @@
-API_URL = "https://api.sentinel.controld.com/api/v1/domains/{}"
-# The Authorization token below is a sample from your browser session. For production, you may need to refresh it or use your own.
-AUTHORIZATION = ""
-
-
+import argparse
+import json
 import sys
-import time
 
-import pandas as pd
-import requests
-from tabulate import tabulate
 from termcolor import colored
 
 
@@ -16,26 +9,32 @@ def print_section(title, color):
     print(colored(f"\n{title}", color, attrs=["bold"]))
 
 
-def lookup_domain(domain, retries=3, delay=2):
+import pandas as pd
+import requests
+from tabulate import tabulate
+
+
+def lookup_domain(
+    domain,
+    output_json=False,
+    show_categories=True,
+    show_dns=True,
+    show_geoip=True,
+    show_tls=True,
+    show_whois=True,
+):
     url = API_URL.format(domain)
-    headers = {
-        "Accept": "*/*",
-        "Authorization": AUTHORIZATION,
-        "Content-Type": "application/json",
-        "Origin": "https://controld.com",
-        "Referer": "https://controld.com/",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
-    }
-    for attempt in range(1, retries + 1):
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            print(colored(f"Error: {response.status_code}", "red"))
-            print(response.text)
-            return
-        data = response.json()
-        parse_errors = []
-        # Try all sections, collect parse errors
-        # Domain Categories
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return
+    data = response.json()
+    if output_json:
+        print(json.dumps(data, indent=2))
+        return
+    # Section outputs
+    if show_categories:
         try:
             categories = data["body"]["features"]["classification"]["categories"]
             df = pd.DataFrame(categories)
@@ -51,9 +50,8 @@ def lookup_domain(domain, retries=3, delay=2):
                 )
             )
         except Exception as e:
-            parse_errors.append("categories")
             print(colored(f"Could not parse categories: {e}", "red"))
-        # DNS Records
+    if show_dns:
         try:
             dns = data["body"]["features"]["dns"]["records"]
             dns_rows = []
@@ -90,9 +88,8 @@ def lookup_domain(domain, retries=3, delay=2):
             else:
                 print(colored("No DNS records found.", "yellow"))
         except Exception as e:
-            parse_errors.append("dns")
             print(colored(f"Could not parse DNS records: {e}", "red"))
-        # GeoIP Snapshot
+    if show_geoip:
         try:
             geoip = data["body"]["features"].get("geoip", {}).get("ipLocations", {})
             geoip_rows = []
@@ -120,9 +117,8 @@ def lookup_domain(domain, retries=3, delay=2):
             else:
                 print(colored("No GeoIP data found.", "yellow"))
         except Exception as e:
-            parse_errors.append("geoip")
             print(colored(f"Could not parse GeoIP data: {e}", "red"))
-        # TLS Results
+    if show_tls:
         try:
             tls = data["body"]["features"].get("tls", {})
             tls_rows = [
@@ -145,9 +141,8 @@ def lookup_domain(domain, retries=3, delay=2):
                 )
             )
         except Exception as e:
-            parse_errors.append("tls")
             print(colored(f"Could not parse TLS data: {e}", "red"))
-        # WHOIS Data
+    if show_whois:
         try:
             whois = data["body"]["features"].get("whois", {}).get("parsed", {})
             whois_rows = [
@@ -170,25 +165,64 @@ def lookup_domain(domain, retries=3, delay=2):
                 )
             )
         except Exception as e:
-            parse_errors.append("whois")
             print(colored(f"Could not parse WHOIS data: {e}", "red"))
-        # If no parse errors, break
-        if not parse_errors:
-            break
-        elif attempt < retries:
-            print(
-                colored(
-                    f"\nSome info not available yet, retrying in {delay}s... (Attempt {attempt+1}/{retries})",
-                    "yellow",
-                )
-            )
-            time.sleep(delay)
-        else:
-            print(colored("\nSome info could not be loaded after retries.", "red"))
+
+
+API_URL = "https://api.sentinel.controld.com/api/v1/domains/{}"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="""
+controld-lookup: Query domain intelligence from ControlD Sentinel API.
+
+Usage:
+  python lookup_domain.py <domain> [options]
+
+Options:
+  --json           Output full JSON response only (no formatting)
+  --categories     Show only domain categories
+  --dns            Show only DNS records
+  --geoip          Show only GeoIP snapshot
+  --tls            Show only TLS results
+  --whois          Show only WHOIS data
+
+If no section flags are provided, all sections are shown (except --json, which overrides all).
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("domain", help="Domain to look up")
+    parser.add_argument("--json", action="store_true", help="Output raw JSON only")
+    parser.add_argument(
+        "--categories", action="store_true", help="Show only domain categories"
+    )
+    parser.add_argument("--dns", action="store_true", help="Show only DNS records")
+    parser.add_argument("--geoip", action="store_true", help="Show only GeoIP snapshot")
+    parser.add_argument("--tls", action="store_true", help="Show only TLS results")
+    parser.add_argument("--whois", action="store_true", help="Show only WHOIS data")
+    args = parser.parse_args()
+
+    # Section flags: if any are set, only show those
+    section_flags = [args.categories, args.dns, args.geoip, args.tls, args.whois]
+    if any(section_flags):
+        show_categories = args.categories
+        show_dns = args.dns
+        show_geoip = args.geoip
+        show_tls = args.tls
+        show_whois = args.whois
+    else:
+        show_categories = show_dns = show_geoip = show_tls = show_whois = True
+
+    lookup_domain(
+        args.domain,
+        output_json=args.json,
+        show_categories=show_categories,
+        show_dns=show_dns,
+        show_geoip=show_geoip,
+        show_tls=show_tls,
+        show_whois=show_whois,
+    )
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python lookup_domain.py <domain>")
-        sys.exit(1)
-    lookup_domain(sys.argv[1])
+    main()
