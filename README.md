@@ -1,4 +1,7 @@
 
+
+![lookup CLI screenshot](lookup.png)
+
 # ControlD Domain Lookup CLI
 
 This is a Python CLI tool to query the [ControlD Dragonfly URL Filtering](https://controld.com/tools/dragonfly-url-filtering) API and display domain intelligence in a readable, colorized table format or as raw JSON.
