@@ -1,11 +1,19 @@
-# ControlD Dragonfly Domain Lookup CLI
 
-This is a simple Python CLI tool to query the [ControlD Dragonfly URL Filtering](https://controld.com/tools/dragonfly-url-filtering) API and display domain information in a readable table format.
+# ControlD Domain Lookup CLI
+
+This is a Python CLI tool to query the [ControlD Dragonfly URL Filtering](https://controld.com/tools/dragonfly-url-filtering) API and display domain intelligence in a readable, colorized table format or as raw JSON.
 
 ## Features
-- Lookup domain categories, DNS records, GeoIP, TLS, and WHOIS data
-- Output is formatted as tables using pandas
-- Uses the same public API as the ControlD Dragonfly web tool
+- Lookup and display:
+  - Domain categories
+  - DNS records
+  - GeoIP snapshot
+  - TLS results
+  - WHOIS data
+- Output is colorized and formatted as tables using pandas/tabulate
+- Supports output as raw JSON with `--json`
+- Show only specific sections with flags: `--categories`, `--dns`, `--geoip`, `--tls`, `--whois`
+- No Authorization token required (public API)
 
 ## Usage
 1. **Clone this repository and enter the directory:**
@@ -21,22 +29,48 @@ This is a simple Python CLI tool to query the [ControlD Dragonfly URL Filtering]
    ```
    Or install manually:
    ```sh
-   pip install requests pandas tabulate
+   pip install requests pandas tabulate termcolor
    ```
-3. **Get your ControlD API Authorization token:**
-   - Go to [https://controld.com/tools/dragonfly-url-filtering](https://controld.com/tools/dragonfly-url-filtering)
-   - Open your browser's Developer Tools (Network tab)
-   - Perform a lookup and copy the `Authorization` header value from the API request
-   - Paste your token into the script where indicated (do NOT share your token publicly)
-
-4. **Run the script:**
+3. **Run the script:**
    ```sh
    python lookup_domain.py <domain>
    ```
 
+### CLI Options
+
+```
+python lookup_domain.py <domain> [options]
+
+Options:
+  --json           Output full JSON response only (no formatting)
+  --categories     Show only domain categories
+  --dns            Show only DNS records
+  --geoip          Show only GeoIP snapshot
+  --tls            Show only TLS results
+  --whois          Show only WHOIS data
+
+If no section flags are provided, all sections are shown (except --json, which overrides all).
+```
+
+### Examples
+
+Show all info (default):
+```
+python lookup_domain.py example.com
+```
+
+Show only DNS and WHOIS:
+```
+python lookup_domain.py example.com --dns --whois
+```
+
+Show raw JSON output:
+```
+python lookup_domain.py example.com --json
+```
+
 ## Notes
 - This tool is for personal and educational use.
-- Do not publish your personal Authorization token.
 - For more information about ControlD and their services, visit [https://controld.com](https://controld.com)
 
 ## Disclaimer
