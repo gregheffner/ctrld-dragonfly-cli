@@ -21,8 +21,8 @@ This is a Python CLI tool to query the [ControlD Dragonfly URL Filtering](https:
 ## Usage
 1. **Clone this repository and enter the directory:**
    ```sh
-   git clone <your-repo-url>
-   cd controld-lookup
+   git clone ctrld-dragonfly-cli
+   cd ctrld-dragonfly-cli
    ```
 2. **Create a virtual environment and install dependencies:**
    ```sh
